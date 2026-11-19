@@ -28,6 +28,21 @@ public final class BaseConstants {
     public static final String CODE_IMAGEN_FORMATO_INVALIDO = "IMAGEN_FORMATO_INVALIDO";
     public static final String CODE_IMAGEN_TAMANO_EXCEDIDO = "IMAGEN_TAMANO_EXCEDIDO";
     public static final String CODE_IMAGEN_CORRUPTA = "IMAGEN_CORRUPTA";
+    public static final String CODE_IMAGEN_SUBIDA_ERROR = "IMAGEN_SUBIDA_ERROR";
+
+    // Codigos de error de usuarios y registro (Issue #4)
+    public static final String CODE_CORREO_YA_REGISTRADO = "CORREO_YA_REGISTRADO";
+    public static final String CODE_CORREO_INVALIDO = "CORREO_INVALIDO";
+    public static final String CODE_PASSWORD_DEBIL = "PASSWORD_DEBIL";
+    public static final String CODE_EDAD_INVALIDA = "EDAD_INVALIDA";
+    public static final String CODE_UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
+
+    // Categorias de sistema (siembra al registrar usuario)
+    public static final String CAT_SISTEMA_TRANSFERENCIA_SALIENTE = "Transferencia Saliente";
+    public static final String CAT_SISTEMA_TRANSFERENCIA_ENTRANTE = "Transferencia Entrante";
+    public static final String CAT_SISTEMA_COLOR_DEFAULT = "#64748B";
+    public static final String CAT_SISTEMA_ICONO_SALIENTE = "arrow_upward";
+    public static final String CAT_SISTEMA_ICONO_ENTRANTE = "arrow_downward";
 
     // Codigos de error de seguridad y criptografia (Issues #2 y #3)
     public static final String CODE_PAYLOAD_EXPIRADO = "PAYLOAD_EXPIRADO";

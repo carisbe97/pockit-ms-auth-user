@@ -9,12 +9,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Comparator;
@@ -147,6 +149,30 @@ public class BaseControllerAdvice {
                 BaseConstants.MSG_FORBIDDEN
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponseDto> handleMissingServletRequestPart(MissingServletRequestPartException ex) {
+        String detail = ex.getRequestPartName() + ": parte obligatoria";
+        log.warn("Missing request part: {}", detail);
+        ErrorResponseDto body = new ErrorResponseDto(
+                HttpStatus.BAD_REQUEST.value(),
+                BaseConstants.CODE_MISSING_PARAMETER,
+                BaseConstants.MSG_VALIDATION_ERROR,
+                List.of(detail)
+        );
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponseDto> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        log.warn("Unsupported media type: {}", ex.getContentType());
+        ErrorResponseDto body = ErrorResponseDto.of(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
+                BaseConstants.CODE_UNSUPPORTED_MEDIA_TYPE,
+                "Tipo de contenido no soportado."
+        );
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(body);
     }
 
     @ExceptionHandler(Exception.class)

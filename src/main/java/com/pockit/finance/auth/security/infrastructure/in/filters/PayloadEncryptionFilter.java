@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 @Slf4j
 @Component
@@ -35,6 +36,12 @@ public class PayloadEncryptionFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        if (request.getContentType() != null
+                && request.getContentType().toLowerCase(Locale.ROOT).startsWith("multipart/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String encryptedHeader = request.getHeader(BaseConstants.HEADER_PAYLOAD_ENCRYPTED);
         if (!"true".equalsIgnoreCase(encryptedHeader)) {
             filterChain.doFilter(request, response);
