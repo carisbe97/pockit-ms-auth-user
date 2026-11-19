@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -123,6 +125,28 @@ public class BaseControllerAdvice {
                 "Recurso no encontrado."
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDto> handleAuthenticationException(AuthenticationException ex) {
+        log.warn("Authentication error: {}", ex.getMessage());
+        ErrorResponseDto body = ErrorResponseDto.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                BaseConstants.CODE_UNAUTHORIZED,
+                BaseConstants.MSG_UNAUTHORIZED
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        ErrorResponseDto body = ErrorResponseDto.of(
+                HttpStatus.FORBIDDEN.value(),
+                BaseConstants.CODE_FORBIDDEN,
+                BaseConstants.MSG_FORBIDDEN
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(Exception.class)

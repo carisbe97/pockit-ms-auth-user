@@ -70,10 +70,33 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
 
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD}
+    algorithm: PBEWITHHMACSHA512ANDAES_256
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+    string-output-type: base64
+    key-obtention-iterations: 1000
+    pool-size: 1
+
 app:
   openapi:
     server-url: ${APP_OPENAPI_SERVER_URL:http://localhost:8081}
     server-description: ${APP_OPENAPI_SERVER_DESC:Ares - Desarrollo Local (DEV)}
+  crypto:
+    replay-window-seconds: ${APP_CRYPTO_REPLAY_WINDOW_SECONDS:300}
+    rsa:
+      private-key: ${APP_CRYPTO_RSA_PRIVATE_KEY:}
+      public-key: ${APP_CRYPTO_RSA_PUBLIC_KEY:}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:pockit-ms-auth-user}
+      expiration-seconds: ${JWT_EXPIRATION_SECONDS:900}
+    cors:
+      allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:3000}
+    csp-policy: ${APP_SECURITY_CSP_POLICY:default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'}
 
 ---
 spring:
@@ -82,6 +105,16 @@ spring:
       on-profile: ares
   jpa:
     show-sql: true
+server:
+  ssl:
+    enabled: false
+jasypt:
+  encryptor:
+    password: ${JASYPT_ENCRYPTOR_PASSWORD:pockit-ares-dev-jasypt-master-key}
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:pockit-ares-dev-jwt-secret-key-minimo-64-bytes-hs512-solo-desarrollo-local-0123456789}
 management:
   endpoint:
     health:
@@ -97,6 +130,19 @@ spring:
       on-profile: hermes
   jpa:
     show-sql: false
+server:
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:true}
+    protocol: TLS
+    enabled-protocols: TLSv1.3,TLSv1.2
+    client-auth: need
+    key-store: ${SSL_KEYSTORE_PATH}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD}
+    key-store-type: ${SSL_KEYSTORE_TYPE:PKCS12}
+    key-alias: ${SSL_KEY_ALIAS:pockit-ms-auth-user}
+    trust-store: ${SSL_TRUSTSTORE_PATH}
+    trust-store-password: ${SSL_TRUSTSTORE_PASSWORD}
+    trust-store-type: ${SSL_TRUSTSTORE_TYPE:PKCS12}
 management:
   endpoint:
     health:
@@ -112,6 +158,22 @@ spring:
       on-profile: zeus
   jpa:
     show-sql: false
+server:
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:true}
+    protocol: TLS
+    enabled-protocols: TLSv1.3,TLSv1.2
+    client-auth: need
+    key-store: ${SSL_KEYSTORE_PATH}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD}
+    key-store-type: ${SSL_KEYSTORE_TYPE:PKCS12}
+    key-alias: ${SSL_KEY_ALIAS:pockit-ms-auth-user}
+    trust-store: ${SSL_TRUSTSTORE_PATH}
+    trust-store-password: ${SSL_TRUSTSTORE_PASSWORD}
+    trust-store-type: ${SSL_TRUSTSTORE_TYPE:PKCS12}
+app:
+  security:
+    csp-policy: "default-src 'self'; frame-ancestors 'none'"
 management:
   endpoint:
     health:
