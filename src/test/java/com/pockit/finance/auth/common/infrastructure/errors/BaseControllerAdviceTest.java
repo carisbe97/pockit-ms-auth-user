@@ -15,12 +15,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Set;
@@ -124,6 +126,19 @@ class BaseControllerAdviceTest {
 
         ErrorResponseDto nullDetailsDto = new ErrorResponseDto(400, "X", "msg", null);
         assertThat(nullDetailsDto.details()).isEmpty();
+
+        ResponseEntity<ErrorResponseDto> missingPartRes = advice.handleMissingServletRequestPart(
+                new MissingServletRequestPartException("datos"));
+        assertThat(missingPartRes.getStatusCode().value()).isEqualTo(400);
+        assertThat(missingPartRes.getBody()).isNotNull();
+        assertThat(missingPartRes.getBody().code()).isEqualTo(BaseConstants.CODE_MISSING_PARAMETER);
+        assertThat(missingPartRes.getBody().details()).containsExactly("datos: parte obligatoria");
+
+        ResponseEntity<ErrorResponseDto> unsupportedMediaRes = advice.handleMediaTypeNotSupported(
+                new HttpMediaTypeNotSupportedException("Content-Type 'text/plain' is not supported"));
+        assertThat(unsupportedMediaRes.getStatusCode().value()).isEqualTo(415);
+        assertThat(unsupportedMediaRes.getBody()).isNotNull();
+        assertThat(unsupportedMediaRes.getBody().code()).isEqualTo(BaseConstants.CODE_UNSUPPORTED_MEDIA_TYPE);
     }
 
     record DummyRequest(

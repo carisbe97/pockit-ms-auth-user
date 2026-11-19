@@ -123,4 +123,19 @@ class PayloadEncryptionFilterTest {
         assertThat(expRes.getContentAsString()).contains(BaseConstants.CODE_PAYLOAD_EXPIRADO);
         verify(filterChain, never()).doFilter(any(), any());
     }
+
+    @Test
+    @DisplayName("Debe dejar pasar peticiones multipart/form-data sin intentar descifrar el body")
+    void shouldBypassMultipartRequests() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContentType("multipart/form-data; boundary=---12345");
+        request.addHeader(BaseConstants.HEADER_PAYLOAD_ENCRYPTED, "true");
+        request.setContent("raw-multipart-bytes".getBytes(StandardCharsets.UTF_8));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        verify(cryptoPort, never()).decryptPayload(any());
+    }
 }

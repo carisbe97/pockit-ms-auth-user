@@ -16,4 +16,8 @@ public class ImagenException extends BaseDomainException {
     public ImagenException(String code, String message, Throwable cause) {
         super(400, code, message, cause);
     }
+
+    public ImagenException(int statusCode, String code, String message, Throwable cause) {
+        super(statusCode, code, message, cause);
+    }
 }
