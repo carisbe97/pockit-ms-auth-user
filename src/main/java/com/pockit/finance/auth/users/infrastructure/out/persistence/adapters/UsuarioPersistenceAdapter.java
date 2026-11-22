@@ -21,7 +21,7 @@ public class UsuarioPersistenceAdapter implements IUsuarioRepositoryPort {
     @Override
     public Usuario save(Usuario usuario) {
         UsuarioEntity entity = usuarioPersistenceMapper.toEntity(usuario);
-        UsuarioEntity saved = usuarioJpaRepository.save(entity);
+        UsuarioEntity saved = usuarioJpaRepository.saveAndFlush(entity);
         return usuarioPersistenceMapper.toDomain(saved);
     }
 
