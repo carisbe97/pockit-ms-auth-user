@@ -2,7 +2,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
-import com.pockit.finance.auth.users.application.usecases.CreateUsuarioService;
+import com.pockit.finance.auth.users.domain.services.CreateUsuarioService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,4 +1,4 @@
-package com.pockit.finance.auth.users.application.usecases;
+package com.pockit.finance.auth.users.domain.services;
 
 import com.pockit.finance.auth.common.domain.exceptions.BaseDomainException;
 import com.pockit.finance.auth.users.domain.models.Usuario;
