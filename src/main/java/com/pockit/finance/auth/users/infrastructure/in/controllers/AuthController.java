@@ -1,10 +1,21 @@
 package com.pockit.finance.auth.users.infrastructure.in.controllers;
 
 import com.pockit.finance.auth.common.infrastructure.utilities.ImageUtil;
+import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
+import com.pockit.finance.auth.users.domain.models.LoginCommand;
+import com.pockit.finance.auth.users.domain.models.LogoutCommand;
+import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.ICreateUsuarioUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.ILoginUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.ILogoutUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRefreshTokenUseCase;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.AuthTokensResponseDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.CreateUsuarioDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.LoginRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.LogoutRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RefreshTokenRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.UsuarioResponseDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.mappers.IUsuarioWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +39,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final ICreateUsuarioUseCase createUsuarioUseCase;
+    private final ILoginUseCase loginUseCase;
+    private final IRefreshTokenUseCase refreshTokenUseCase;
+    private final ILogoutUseCase logoutUseCase;
     private final IUsuarioWebMapper usuarioWebMapper;
 
     @Operation(summary = "Registrar usuario (JSON)", description = "Registra un nuevo usuario sin avatar usando JSON.")
@@ -76,5 +90,33 @@ public class AuthController {
         );
         Usuario creado = createUsuarioUseCase.ejecutar(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioWebMapper.toResponseDto(creado));
+    }
+
+    @Operation(summary = "Iniciar sesion", description = "Autentica al usuario y retorna access token JWT y refresh token opaco.")
+    @PostMapping("/login")
+    public ResponseEntity<AuthTokensResponseDto> login(@Valid @RequestBody LoginRequestDto dto) {
+        AuthResult result = loginUseCase.ejecutar(new LoginCommand(
+                dto.usrCorreo(),
+                dto.usrPassword(),
+                dto.dispositivo()
+        ));
+        return ResponseEntity.ok(usuarioWebMapper.toAuthTokensResponseDto(result));
+    }
+
+    @Operation(summary = "Refrescar sesion", description = "Rota el refresh token de un solo uso y emite un nuevo par de tokens.")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthTokensResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto dto) {
+        AuthResult result = refreshTokenUseCase.ejecutar(new RefreshTokenCommand(
+                dto.refreshToken(),
+                dto.dispositivo()
+        ));
+        return ResponseEntity.ok(usuarioWebMapper.toAuthTokensResponseDto(result));
+    }
+
+    @Operation(summary = "Cerrar sesion", description = "Revoca el refresh token indicado.")
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequestDto dto) {
+        logoutUseCase.ejecutar(new LogoutCommand(dto.refreshToken()));
+        return ResponseEntity.noContent().build();
     }
 }

@@ -37,6 +37,11 @@ public final class BaseConstants {
     public static final String CODE_EDAD_INVALIDA = "EDAD_INVALIDA";
     public static final String CODE_UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
 
+    // Codigos de error de autenticacion y perfil (Issue #5)
+    public static final String CODE_CREDENCIALES_INVALIDAS = "CREDENCIALES_INVALIDAS";
+    public static final String CODE_REFRESH_TOKEN_INVALIDO = "REFRESH_TOKEN_INVALIDO";
+    public static final String CODE_USUARIO_NO_ENCONTRADO = "USUARIO_NO_ENCONTRADO";
+
     // Categorias de sistema (siembra al registrar usuario)
     public static final String CAT_SISTEMA_TRANSFERENCIA_SALIENTE = "Transferencia Saliente";
     public static final String CAT_SISTEMA_TRANSFERENCIA_ENTRANTE = "Transferencia Entrante";
@@ -65,4 +70,7 @@ public final class BaseConstants {
     public static final String MSG_TOKEN_INVALIDO = "El token de acceso es invalido.";
     public static final String MSG_UNAUTHORIZED = "Se requiere autenticacion valida para acceder a este recurso.";
     public static final String MSG_FORBIDDEN = "No tiene permisos para realizar esta operacion.";
+    public static final String MSG_CREDENCIALES_INVALIDAS = "Credenciales invalidas.";
+    public static final String MSG_REFRESH_TOKEN_INVALIDO = "El refresh token es invalido o ha expirado.";
+    public static final String MSG_USUARIO_NO_ENCONTRADO = "Usuario no encontrado.";
 }
