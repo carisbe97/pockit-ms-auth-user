@@ -42,6 +42,9 @@ public final class BaseConstants {
     public static final String CODE_REFRESH_TOKEN_INVALIDO = "REFRESH_TOKEN_INVALIDO";
     public static final String CODE_USUARIO_NO_ENCONTRADO = "USUARIO_NO_ENCONTRADO";
 
+    // Codigos y mensajes de recuperacion de contrasena (Issue #6)
+    public static final String CODE_RESET_TOKEN_INVALIDO = "RESET_TOKEN_INVALIDO";
+
     // Categorias de sistema (siembra al registrar usuario)
     public static final String CAT_SISTEMA_TRANSFERENCIA_SALIENTE = "Transferencia Saliente";
     public static final String CAT_SISTEMA_TRANSFERENCIA_ENTRANTE = "Transferencia Entrante";
@@ -73,4 +76,7 @@ public final class BaseConstants {
     public static final String MSG_CREDENCIALES_INVALIDAS = "Credenciales invalidas.";
     public static final String MSG_REFRESH_TOKEN_INVALIDO = "El refresh token es invalido o ha expirado.";
     public static final String MSG_USUARIO_NO_ENCONTRADO = "Usuario no encontrado.";
+    public static final String MSG_RESET_TOKEN_INVALIDO = "El token de recuperacion es invalido o ha expirado.";
+    public static final String MSG_RECUPERAR_PASSWORD_OK = "Si el correo se encuentra registrado, recibiras instrucciones para restablecer tu contrasena.";
+    public static final String MSG_RESTABLECER_PASSWORD_OK = "Tu contrasena ha sido restablecida exitosamente.";
 }

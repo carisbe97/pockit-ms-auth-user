@@ -3,6 +3,7 @@ package com.pockit.finance.auth.users.infrastructure.config;
 import com.pockit.finance.auth.security.domain.ports.out.ITokenPort;
 import com.pockit.finance.auth.users.domain.ports.out.ICategoriaSistemaPort;
 import com.pockit.finance.auth.users.domain.ports.out.IPasswordHasherPort;
+import com.pockit.finance.auth.users.domain.ports.out.IRecoveryNotificationPort;
 import com.pockit.finance.auth.users.domain.ports.out.ISesionRefreshRepositoryPort;
 import com.pockit.finance.auth.users.domain.ports.out.IStoragePort;
 import com.pockit.finance.auth.users.domain.ports.out.IUsuarioRepositoryPort;
@@ -10,7 +11,10 @@ import com.pockit.finance.auth.users.domain.services.CreateUsuarioService;
 import com.pockit.finance.auth.users.domain.services.GetUsuarioPerfilService;
 import com.pockit.finance.auth.users.domain.services.LoginService;
 import com.pockit.finance.auth.users.domain.services.LogoutService;
+import com.pockit.finance.auth.users.domain.services.RecuperarPasswordService;
 import com.pockit.finance.auth.users.domain.services.RefreshTokenService;
+import com.pockit.finance.auth.users.domain.services.RestablecerPasswordService;
+import com.pockit.finance.auth.users.domain.services.UpdateAvatarService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -81,6 +85,42 @@ public class UsuarioConfig {
     @Bean
     public GetUsuarioPerfilService getUsuarioPerfilService(IUsuarioRepositoryPort usuarioRepositoryPort) {
         return new GetUsuarioPerfilService(usuarioRepositoryPort);
+    }
+
+    @Bean
+    public RecuperarPasswordService recuperarPasswordService(
+            IUsuarioRepositoryPort usuarioRepositoryPort,
+            IRecoveryNotificationPort recoveryNotificationPort,
+            @Value("${app.security.reset-password.expiration-minutes:15}") long resetExpirationMinutes
+    ) {
+        return new RecuperarPasswordService(
+                usuarioRepositoryPort,
+                recoveryNotificationPort,
+                resetExpirationMinutes,
+                Clock.systemUTC()
+        );
+    }
+
+    @Bean
+    public RestablecerPasswordService restablecerPasswordService(
+            IUsuarioRepositoryPort usuarioRepositoryPort,
+            IPasswordHasherPort passwordHasherPort,
+            ISesionRefreshRepositoryPort sesionRefreshRepositoryPort
+    ) {
+        return new RestablecerPasswordService(
+                usuarioRepositoryPort,
+                passwordHasherPort,
+                sesionRefreshRepositoryPort,
+                Clock.systemUTC()
+        );
+    }
+
+    @Bean
+    public UpdateAvatarService updateAvatarService(
+            IUsuarioRepositoryPort usuarioRepositoryPort,
+            IStoragePort storagePort
+    ) {
+        return new UpdateAvatarService(usuarioRepositoryPort, storagePort);
     }
 
     @Bean

@@ -13,5 +13,7 @@ public interface IUsuarioRepositoryPort {
 
     Optional<Usuario> findByCorreo(String correo);
 
+    Optional<Usuario> findByResetTokenHash(String tokenHash);
+
     boolean existsByCorreo(String correo);
 }

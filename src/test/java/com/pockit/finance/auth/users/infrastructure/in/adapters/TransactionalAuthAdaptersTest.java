@@ -3,12 +3,18 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.LoginCommand;
 import com.pockit.finance.auth.users.domain.models.LogoutCommand;
+import com.pockit.finance.auth.users.domain.models.RecuperarPasswordCommand;
 import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
+import com.pockit.finance.auth.users.domain.models.RestablecerPasswordCommand;
+import com.pockit.finance.auth.users.domain.models.UpdateAvatarCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.services.GetUsuarioPerfilService;
 import com.pockit.finance.auth.users.domain.services.LoginService;
 import com.pockit.finance.auth.users.domain.services.LogoutService;
+import com.pockit.finance.auth.users.domain.services.RecuperarPasswordService;
 import com.pockit.finance.auth.users.domain.services.RefreshTokenService;
+import com.pockit.finance.auth.users.domain.services.RestablecerPasswordService;
+import com.pockit.finance.auth.users.domain.services.UpdateAvatarService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +39,12 @@ class TransactionalAuthAdaptersTest {
     private LogoutService logoutService;
     @Mock
     private GetUsuarioPerfilService getUsuarioPerfilService;
+    @Mock
+    private RecuperarPasswordService recuperarPasswordService;
+    @Mock
+    private RestablecerPasswordService restablecerPasswordService;
+    @Mock
+    private UpdateAvatarService updateAvatarService;
 
     @InjectMocks
     private TransactionalLoginAdapter loginAdapter;
@@ -42,6 +54,12 @@ class TransactionalAuthAdaptersTest {
     private TransactionalLogoutAdapter logoutAdapter;
     @InjectMocks
     private TransactionalGetUsuarioPerfilAdapter getUsuarioPerfilAdapter;
+    @InjectMocks
+    private TransactionalRecuperarPasswordAdapter recuperarPasswordAdapter;
+    @InjectMocks
+    private TransactionalRestablecerPasswordAdapter restablecerPasswordAdapter;
+    @InjectMocks
+    private TransactionalUpdateAvatarAdapter updateAvatarAdapter;
 
     @Test
     @DisplayName("TransactionalLoginAdapter debe delegar a LoginService")
@@ -90,5 +108,39 @@ class TransactionalAuthAdaptersTest {
 
         assertThat(actual).isSameAs(expected);
         verify(getUsuarioPerfilService).ejecutar(usrId);
+    }
+
+    @Test
+    @DisplayName("TransactionalRecuperarPasswordAdapter debe delegar a RecuperarPasswordService")
+    void shouldDelegateRecuperarPassword() {
+        RecuperarPasswordCommand cmd = new RecuperarPasswordCommand("user@pockit.com");
+
+        recuperarPasswordAdapter.ejecutar(cmd);
+
+        verify(recuperarPasswordService).ejecutar(cmd);
+    }
+
+    @Test
+    @DisplayName("TransactionalRestablecerPasswordAdapter debe delegar a RestablecerPasswordService")
+    void shouldDelegateRestablecerPassword() {
+        RestablecerPasswordCommand cmd = new RestablecerPasswordCommand("raw-token", "NuevaClave@2026");
+
+        restablecerPasswordAdapter.ejecutar(cmd);
+
+        verify(restablecerPasswordService).ejecutar(cmd);
+    }
+
+    @Test
+    @DisplayName("TransactionalUpdateAvatarAdapter debe delegar a UpdateAvatarService")
+    void shouldDelegateUpdateAvatar() {
+        UUID usrId = UUID.randomUUID();
+        UpdateAvatarCommand cmd = new UpdateAvatarCommand(usrId, new byte[]{1, 2}, "image/png", "png");
+        Usuario expected = Usuario.builder().usrId(usrId).usrAvatarUrl("https://cdn.test/avatar.png").build();
+        when(updateAvatarService.ejecutar(cmd)).thenReturn(expected);
+
+        Usuario actual = updateAvatarAdapter.ejecutar(cmd);
+
+        assertThat(actual).isSameAs(expected);
+        verify(updateAvatarService).ejecutar(cmd);
     }
 }

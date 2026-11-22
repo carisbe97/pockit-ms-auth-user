@@ -1,21 +1,29 @@
 package com.pockit.finance.auth.users.infrastructure.in.controllers;
 
+import com.pockit.finance.auth.common.infrastructure.utilities.BaseConstants;
 import com.pockit.finance.auth.common.infrastructure.utilities.ImageUtil;
 import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
 import com.pockit.finance.auth.users.domain.models.LoginCommand;
 import com.pockit.finance.auth.users.domain.models.LogoutCommand;
+import com.pockit.finance.auth.users.domain.models.RecuperarPasswordCommand;
 import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
+import com.pockit.finance.auth.users.domain.models.RestablecerPasswordCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.ICreateUsuarioUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.ILoginUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.ILogoutUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRecuperarPasswordUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.IRefreshTokenUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRestablecerPasswordUseCase;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.AuthTokensResponseDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.CreateUsuarioDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.LoginRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.LogoutRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.MessageResponseDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RecuperarPasswordRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.RefreshTokenRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RestablecerPasswordRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.UsuarioResponseDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.mappers.IUsuarioWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +50,8 @@ public class AuthController {
     private final ILoginUseCase loginUseCase;
     private final IRefreshTokenUseCase refreshTokenUseCase;
     private final ILogoutUseCase logoutUseCase;
+    private final IRecuperarPasswordUseCase recuperarPasswordUseCase;
+    private final IRestablecerPasswordUseCase restablecerPasswordUseCase;
     private final IUsuarioWebMapper usuarioWebMapper;
 
     @Operation(summary = "Registrar usuario (JSON)", description = "Registra un nuevo usuario sin avatar usando JSON.")
@@ -118,5 +128,19 @@ public class AuthController {
     public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequestDto dto) {
         logoutUseCase.ejecutar(new LogoutCommand(dto.refreshToken()));
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Solicitar recuperacion de contrasena", description = "Genera un token de recuperacion de un solo uso si el correo existe.")
+    @PostMapping("/recuperar-password")
+    public ResponseEntity<MessageResponseDto> recuperarPassword(@Valid @RequestBody RecuperarPasswordRequestDto dto) {
+        recuperarPasswordUseCase.ejecutar(new RecuperarPasswordCommand(dto.usrCorreo()));
+        return ResponseEntity.ok(new MessageResponseDto(BaseConstants.MSG_RECUPERAR_PASSWORD_OK));
+    }
+
+    @Operation(summary = "Restablecer contrasena", description = "Valida el token de recuperacion, actualiza la contrasena y revoca sesiones activas.")
+    @PostMapping("/restablecer-password")
+    public ResponseEntity<MessageResponseDto> restablecerPassword(@Valid @RequestBody RestablecerPasswordRequestDto dto) {
+        restablecerPasswordUseCase.ejecutar(new RestablecerPasswordCommand(dto.token(), dto.nuevoPassword()));
+        return ResponseEntity.ok(new MessageResponseDto(BaseConstants.MSG_RESTABLECER_PASSWORD_OK));
     }
 }
