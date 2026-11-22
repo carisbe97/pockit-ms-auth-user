@@ -1,13 +1,22 @@
 package com.pockit.finance.auth.users.infrastructure.config;
 
+import com.pockit.finance.auth.security.domain.ports.out.ITokenPort;
 import com.pockit.finance.auth.users.domain.ports.out.ICategoriaSistemaPort;
 import com.pockit.finance.auth.users.domain.ports.out.IPasswordHasherPort;
+import com.pockit.finance.auth.users.domain.ports.out.ISesionRefreshRepositoryPort;
 import com.pockit.finance.auth.users.domain.ports.out.IStoragePort;
 import com.pockit.finance.auth.users.domain.ports.out.IUsuarioRepositoryPort;
 import com.pockit.finance.auth.users.domain.services.CreateUsuarioService;
+import com.pockit.finance.auth.users.domain.services.GetUsuarioPerfilService;
+import com.pockit.finance.auth.users.domain.services.LoginService;
+import com.pockit.finance.auth.users.domain.services.LogoutService;
+import com.pockit.finance.auth.users.domain.services.RefreshTokenService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
+
+import java.time.Clock;
 
 /**
  * Configuracion de wiring de beans del modulo users.
@@ -28,6 +37,50 @@ public class UsuarioConfig {
                 categoriaSistemaPort,
                 storagePort
         );
+    }
+
+    @Bean
+    public LoginService loginService(
+            IUsuarioRepositoryPort usuarioRepositoryPort,
+            IPasswordHasherPort passwordHasherPort,
+            ISesionRefreshRepositoryPort sesionRefreshRepositoryPort,
+            ITokenPort tokenPort,
+            @Value("${app.security.jwt.refresh-expiration-seconds:604800}") long refreshExpirationSeconds
+    ) {
+        return new LoginService(
+                usuarioRepositoryPort,
+                passwordHasherPort,
+                sesionRefreshRepositoryPort,
+                tokenPort,
+                refreshExpirationSeconds,
+                Clock.systemUTC()
+        );
+    }
+
+    @Bean
+    public RefreshTokenService refreshTokenService(
+            ISesionRefreshRepositoryPort sesionRefreshRepositoryPort,
+            IUsuarioRepositoryPort usuarioRepositoryPort,
+            ITokenPort tokenPort,
+            @Value("${app.security.jwt.refresh-expiration-seconds:604800}") long refreshExpirationSeconds
+    ) {
+        return new RefreshTokenService(
+                sesionRefreshRepositoryPort,
+                usuarioRepositoryPort,
+                tokenPort,
+                refreshExpirationSeconds,
+                Clock.systemUTC()
+        );
+    }
+
+    @Bean
+    public LogoutService logoutService(ISesionRefreshRepositoryPort sesionRefreshRepositoryPort) {
+        return new LogoutService(sesionRefreshRepositoryPort);
+    }
+
+    @Bean
+    public GetUsuarioPerfilService getUsuarioPerfilService(IUsuarioRepositoryPort usuarioRepositoryPort) {
+        return new GetUsuarioPerfilService(usuarioRepositoryPort);
     }
 
     @Bean

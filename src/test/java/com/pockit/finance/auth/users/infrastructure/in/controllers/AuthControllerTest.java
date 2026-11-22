@@ -12,10 +12,21 @@ import com.pockit.finance.auth.security.infrastructure.in.filters.PayloadEncrypt
 import com.pockit.finance.auth.security.infrastructure.in.handlers.CustomAccessDeniedHandler;
 import com.pockit.finance.auth.security.infrastructure.in.handlers.CustomAuthenticationEntryPoint;
 import com.pockit.finance.auth.security.infrastructure.in.handlers.SecurityErrorResponseWriter;
+import com.pockit.finance.auth.users.domain.exceptions.RefreshTokenReuseException;
+import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
+import com.pockit.finance.auth.users.domain.models.LoginCommand;
+import com.pockit.finance.auth.users.domain.models.LogoutCommand;
+import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.ICreateUsuarioUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.ILoginUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.ILogoutUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRefreshTokenUseCase;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.CreateUsuarioDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.LoginRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.LogoutRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RefreshTokenRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.mappers.IUsuarioWebMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -66,6 +77,15 @@ class AuthControllerTest {
 
     @MockBean
     private ICreateUsuarioUseCase createUsuarioUseCase;
+
+    @MockBean
+    private ILoginUseCase loginUseCase;
+
+    @MockBean
+    private IRefreshTokenUseCase refreshTokenUseCase;
+
+    @MockBean
+    private ILogoutUseCase logoutUseCase;
 
     @MockBean
     private ICryptoPort cryptoPort;
@@ -227,5 +247,136 @@ class AuthControllerTest {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.statusCode").value(422))
                 .andExpect(jsonPath("$.code").value(BaseConstants.CODE_PASSWORD_DEBIL));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/login debe retornar 200 OK con tokens y perfil sin usrPasswordHash")
+    void shouldLoginAndReturn200() throws Exception {
+        UUID usrId = UUID.randomUUID();
+        Usuario usuario = Usuario.builder()
+                .usrId(usrId)
+                .usrCorreo("camilo@pockit.com")
+                .usrPasswordHash("$2a$12$secrethashshouldneverappear")
+                .usrNombre("Camilo")
+                .usrApellido("Perez")
+                .usrEdad((short) 28)
+                .usrActivo(true)
+                .usrCreadoEn(OffsetDateTime.now(ZoneOffset.UTC))
+                .build();
+        AuthResult authResult = new AuthResult("jwt-token", "opaque-refresh", "Bearer", 900L, usuario);
+
+        when(loginUseCase.ejecutar(any(LoginCommand.class))).thenReturn(authResult);
+
+        LoginRequestDto dto = new LoginRequestDto("camilo@pockit.com", "Pockit@2026", "Web");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("jwt-token"))
+                .andExpect(jsonPath("$.refreshToken").value("opaque-refresh"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(900))
+                .andExpect(jsonPath("$.usuario.usrId").value(usrId.toString()))
+                .andExpect(jsonPath("$.usuario.usrCorreo").value("camilo@pockit.com"))
+                .andExpect(content().string(not(containsString("usrPasswordHash"))))
+                .andExpect(content().string(not(containsString("secrethashshouldneverappear"))));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/login debe retornar 401 cuando las credenciales son invalidas")
+    void shouldReturn401WhenLoginCredentialsAreInvalid() throws Exception {
+        when(loginUseCase.ejecutar(any(LoginCommand.class)))
+                .thenThrow(new BaseDomainException(401, BaseConstants.CODE_CREDENCIALES_INVALIDAS, BaseConstants.MSG_CREDENCIALES_INVALIDAS));
+
+        LoginRequestDto dto = new LoginRequestDto("camilo@pockit.com", "WrongPass", null);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.statusCode").value(401))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_CREDENCIALES_INVALIDAS));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/login debe retornar 400 cuando el DTO es invalido")
+    void shouldReturn400WhenLoginValidationFails() throws Exception {
+        LoginRequestDto invalidDto = new LoginRequestDto("no-es-correo", "", null);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode").value(400))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_VALIDATION_ERROR));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh debe retornar 200 OK con nuevo par de tokens")
+    void shouldRefreshAndReturn200() throws Exception {
+        UUID usrId = UUID.randomUUID();
+        Usuario usuario = Usuario.builder()
+                .usrId(usrId)
+                .usrCorreo("camilo@pockit.com")
+                .usrNombre("Camilo")
+                .usrActivo(true)
+                .build();
+        AuthResult authResult = new AuthResult("new-jwt", "new-refresh", "Bearer", 900L, usuario);
+
+        when(refreshTokenUseCase.ejecutar(any(RefreshTokenCommand.class))).thenReturn(authResult);
+
+        RefreshTokenRequestDto dto = new RefreshTokenRequestDto("old-refresh", "Mobile");
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new-jwt"))
+                .andExpect(jsonPath("$.refreshToken").value("new-refresh"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.usuario.usrId").value(usrId.toString()));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/refresh debe retornar 401 cuando el refresh token es invalido o reutilizado")
+    void shouldReturn401WhenRefreshTokenIsInvalidOrReused() throws Exception {
+        when(refreshTokenUseCase.ejecutar(any(RefreshTokenCommand.class)))
+                .thenThrow(new RefreshTokenReuseException("Reuso detectado"));
+
+        RefreshTokenRequestDto dto = new RefreshTokenRequestDto("reused-token", null);
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.statusCode").value(401))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_REFRESH_TOKEN_INVALIDO));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/logout debe retornar 204 No Content cuando el token es valido")
+    void shouldLogoutAndReturn204() throws Exception {
+        LogoutRequestDto dto = new LogoutRequestDto("valid-refresh-token");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNoContent());
+
+        org.mockito.Mockito.verify(logoutUseCase).ejecutar(new LogoutCommand("valid-refresh-token"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/logout debe retornar 400 cuando falta el refreshToken")
+    void shouldReturn400WhenLogoutRefreshTokenIsBlank() throws Exception {
+        LogoutRequestDto invalidDto = new LogoutRequestDto("");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode").value(400))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_VALIDATION_ERROR));
     }
 }
