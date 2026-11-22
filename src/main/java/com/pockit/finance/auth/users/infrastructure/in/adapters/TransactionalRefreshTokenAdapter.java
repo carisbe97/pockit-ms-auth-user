@@ -4,7 +4,7 @@ import com.pockit.finance.auth.users.domain.exceptions.RefreshTokenReuseExceptio
 import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
 import com.pockit.finance.auth.users.domain.ports.in.IRefreshTokenUseCase;
-import com.pockit.finance.auth.users.application.usecases.RefreshTokenService;
+import com.pockit.finance.auth.users.domain.services.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;

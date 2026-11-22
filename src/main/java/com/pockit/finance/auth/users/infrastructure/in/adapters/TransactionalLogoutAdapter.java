@@ -2,7 +2,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 
 import com.pockit.finance.auth.users.domain.models.LogoutCommand;
 import com.pockit.finance.auth.users.domain.ports.in.ILogoutUseCase;
-import com.pockit.finance.auth.users.application.usecases.LogoutService;
+import com.pockit.finance.auth.users.domain.services.LogoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;

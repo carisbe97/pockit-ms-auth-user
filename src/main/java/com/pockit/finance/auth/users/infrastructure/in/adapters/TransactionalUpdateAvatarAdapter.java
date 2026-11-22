@@ -3,7 +3,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 import com.pockit.finance.auth.users.domain.models.UpdateAvatarCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.IUpdateAvatarUseCase;
-import com.pockit.finance.auth.users.application.usecases.UpdateAvatarService;
+import com.pockit.finance.auth.users.domain.services.UpdateAvatarService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;

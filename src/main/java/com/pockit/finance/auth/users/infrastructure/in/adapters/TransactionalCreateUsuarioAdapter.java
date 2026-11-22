@@ -3,7 +3,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.ICreateUsuarioUseCase;
-import com.pockit.finance.auth.users.application.usecases.CreateUsuarioService;
+import com.pockit.finance.auth.users.domain.services.CreateUsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
