@@ -2,7 +2,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 
 import com.pockit.finance.auth.users.domain.models.RecuperarPasswordCommand;
 import com.pockit.finance.auth.users.domain.ports.in.IRecuperarPasswordUseCase;
-import com.pockit.finance.auth.users.domain.services.RecuperarPasswordService;
+import com.pockit.finance.auth.users.application.usecases.RecuperarPasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;

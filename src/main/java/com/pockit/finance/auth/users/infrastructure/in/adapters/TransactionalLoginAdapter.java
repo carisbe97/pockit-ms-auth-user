@@ -3,7 +3,7 @@ package com.pockit.finance.auth.users.infrastructure.in.adapters;
 import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.LoginCommand;
 import com.pockit.finance.auth.users.domain.ports.in.ILoginUseCase;
-import com.pockit.finance.auth.users.domain.services.LoginService;
+import com.pockit.finance.auth.users.application.usecases.LoginService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
