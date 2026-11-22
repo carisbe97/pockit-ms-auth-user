@@ -17,16 +17,22 @@ import com.pockit.finance.auth.users.domain.models.AuthResult;
 import com.pockit.finance.auth.users.domain.models.CreateUsuarioCommand;
 import com.pockit.finance.auth.users.domain.models.LoginCommand;
 import com.pockit.finance.auth.users.domain.models.LogoutCommand;
+import com.pockit.finance.auth.users.domain.models.RecuperarPasswordCommand;
 import com.pockit.finance.auth.users.domain.models.RefreshTokenCommand;
+import com.pockit.finance.auth.users.domain.models.RestablecerPasswordCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.ICreateUsuarioUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.ILoginUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.ILogoutUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRecuperarPasswordUseCase;
 import com.pockit.finance.auth.users.domain.ports.in.IRefreshTokenUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IRestablecerPasswordUseCase;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.CreateUsuarioDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.LoginRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.LogoutRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RecuperarPasswordRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.dto.RefreshTokenRequestDto;
+import com.pockit.finance.auth.users.infrastructure.config.in.dto.RestablecerPasswordRequestDto;
 import com.pockit.finance.auth.users.infrastructure.config.in.mappers.IUsuarioWebMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,6 +92,12 @@ class AuthControllerTest {
 
     @MockBean
     private ILogoutUseCase logoutUseCase;
+
+    @MockBean
+    private IRecuperarPasswordUseCase recuperarPasswordUseCase;
+
+    @MockBean
+    private IRestablecerPasswordUseCase restablecerPasswordUseCase;
 
     @MockBean
     private ICryptoPort cryptoPort;
@@ -378,5 +390,81 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode").value(400))
                 .andExpect(jsonPath("$.code").value(BaseConstants.CODE_VALIDATION_ERROR));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/recuperar-password debe retornar 200 OK con mensaje generico")
+    void shouldRecoverPasswordAndReturn200() throws Exception {
+        RecuperarPasswordRequestDto dto = new RecuperarPasswordRequestDto("camilo@pockit.com");
+
+        mockMvc.perform(post("/api/auth/recuperar-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(BaseConstants.MSG_RECUPERAR_PASSWORD_OK));
+
+        org.mockito.Mockito.verify(recuperarPasswordUseCase).ejecutar(new RecuperarPasswordCommand("camilo@pockit.com"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/recuperar-password debe retornar 400 cuando el correo es invalido")
+    void shouldReturn400WhenRecoverPasswordEmailInvalid() throws Exception {
+        RecuperarPasswordRequestDto invalidDto = new RecuperarPasswordRequestDto("correo-invalido");
+
+        mockMvc.perform(post("/api/auth/recuperar-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode").value(400))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_VALIDATION_ERROR));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/restablecer-password debe retornar 200 OK cuando el token y password son validos")
+    void shouldResetPasswordAndReturn200() throws Exception {
+        RestablecerPasswordRequestDto dto = new RestablecerPasswordRequestDto("valid-token", "NuevaClave@2026");
+
+        mockMvc.perform(post("/api/auth/restablecer-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value(BaseConstants.MSG_RESTABLECER_PASSWORD_OK));
+
+        org.mockito.Mockito.verify(restablecerPasswordUseCase)
+                .ejecutar(new RestablecerPasswordCommand("valid-token", "NuevaClave@2026"));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/restablecer-password debe retornar 400 cuando el token es invalido o expirado")
+    void shouldReturn400WhenResetTokenInvalid() throws Exception {
+        org.mockito.Mockito.doThrow(new BaseDomainException(
+                400, BaseConstants.CODE_RESET_TOKEN_INVALIDO, BaseConstants.MSG_RESET_TOKEN_INVALIDO
+        )).when(restablecerPasswordUseCase).ejecutar(any(RestablecerPasswordCommand.class));
+
+        RestablecerPasswordRequestDto dto = new RestablecerPasswordRequestDto("bad-token", "NuevaClave@2026");
+
+        mockMvc.perform(post("/api/auth/restablecer-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode").value(400))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_RESET_TOKEN_INVALIDO));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/restablecer-password debe retornar 422 cuando la nueva contrasena es debil")
+    void shouldReturn422WhenResetPasswordIsWeak() throws Exception {
+        org.mockito.Mockito.doThrow(new BaseDomainException(
+                422, BaseConstants.CODE_PASSWORD_DEBIL, "Contrasena debil"
+        )).when(restablecerPasswordUseCase).ejecutar(any(RestablecerPasswordCommand.class));
+
+        RestablecerPasswordRequestDto dto = new RestablecerPasswordRequestDto("valid-token", "debil");
+
+        mockMvc.perform(post("/api/auth/restablecer-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.statusCode").value(422))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_PASSWORD_DEBIL));
     }
 }

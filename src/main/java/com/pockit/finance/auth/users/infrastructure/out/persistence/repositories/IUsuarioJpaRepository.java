@@ -10,5 +10,7 @@ public interface IUsuarioJpaRepository extends JpaRepository<UsuarioEntity, UUID
 
     Optional<UsuarioEntity> findByUsrCorreoIgnoreCase(String correo);
 
+    Optional<UsuarioEntity> findByUsrResetTokenHash(String usrResetTokenHash);
+
     boolean existsByUsrCorreoIgnoreCase(String correo);
 }

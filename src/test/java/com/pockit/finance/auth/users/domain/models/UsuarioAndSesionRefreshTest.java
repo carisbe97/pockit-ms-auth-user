@@ -43,6 +43,18 @@ class UsuarioAndSesionRefreshTest {
 
         usuario.setUsrActivo(false);
         assertThat(usuario.estaActivo()).isFalse();
+
+        OffsetDateTime expira = ahora.plusMinutes(15);
+        usuario.asignarTokenRecuperacion("nuevo-reset-hash", expira);
+        assertThat(usuario.getUsrResetTokenHash()).isEqualTo("nuevo-reset-hash");
+        assertThat(usuario.getUsrResetExpiraEn()).isEqualTo(expira);
+        assertThat(usuario.tokenRecuperacionValido(ahora)).isTrue();
+
+        usuario.restablecerPassword("$2a$12$nuevoPasswordHash");
+        assertThat(usuario.getUsrPasswordHash()).isEqualTo("$2a$12$nuevoPasswordHash");
+        assertThat(usuario.getUsrResetTokenHash()).isNull();
+        assertThat(usuario.getUsrResetExpiraEn()).isNull();
+        assertThat(usuario.tokenRecuperacionValido(ahora)).isFalse();
     }
 
     @Test

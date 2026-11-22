@@ -36,6 +36,11 @@ public class UsuarioPersistenceAdapter implements IUsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Usuario> findByResetTokenHash(String tokenHash) {
+        return usuarioJpaRepository.findByUsrResetTokenHash(tokenHash).map(usuarioPersistenceMapper::toDomain);
+    }
+
+    @Override
     public boolean existsByCorreo(String correo) {
         return usuarioJpaRepository.existsByUsrCorreoIgnoreCase(correo);
     }

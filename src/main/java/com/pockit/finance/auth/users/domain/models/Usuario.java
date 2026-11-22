@@ -47,4 +47,15 @@ public class Usuario {
     public void actualizarAvatar(String nuevaUrl) {
         this.usrAvatarUrl = nuevaUrl;
     }
+
+    public void asignarTokenRecuperacion(String tokenHash, OffsetDateTime expiraEn) {
+        this.usrResetTokenHash = tokenHash;
+        this.usrResetExpiraEn = expiraEn;
+    }
+
+    public void restablecerPassword(String nuevoPasswordHash) {
+        this.usrPasswordHash = nuevoPasswordHash;
+        this.usrResetTokenHash = null;
+        this.usrResetExpiraEn = null;
+    }
 }

@@ -56,11 +56,13 @@ class PersistenceAdaptersTest {
         when(usuarioJpaRepository.save(any(UsuarioEntity.class))).thenReturn(entity);
         when(usuarioJpaRepository.findById(id)).thenReturn(Optional.of(entity));
         when(usuarioJpaRepository.findByUsrCorreoIgnoreCase("test@pockit.com")).thenReturn(Optional.of(entity));
+        when(usuarioJpaRepository.findByUsrResetTokenHash("reset-hash")).thenReturn(Optional.of(entity));
         when(usuarioJpaRepository.existsByUsrCorreoIgnoreCase("test@pockit.com")).thenReturn(true);
 
         assertThat(usuarioAdapter.save(usuario).getUsrId()).isEqualTo(id);
         assertThat(usuarioAdapter.findById(id)).isPresent();
         assertThat(usuarioAdapter.findByCorreo("test@pockit.com")).isPresent();
+        assertThat(usuarioAdapter.findByResetTokenHash("reset-hash")).isPresent();
         assertThat(usuarioAdapter.existsByCorreo("test@pockit.com")).isTrue();
     }
 

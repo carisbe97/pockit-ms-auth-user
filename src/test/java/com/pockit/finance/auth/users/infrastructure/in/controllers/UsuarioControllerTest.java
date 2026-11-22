@@ -14,8 +14,10 @@ import com.pockit.finance.auth.security.infrastructure.in.handlers.CustomAuthent
 import com.pockit.finance.auth.security.infrastructure.in.handlers.SecurityErrorResponseWriter;
 import com.pockit.finance.auth.security.infrastructure.in.resolvers.CurrentUserIdArgumentResolver;
 import com.pockit.finance.auth.security.infrastructure.out.jwt.JwtTokenAdapter;
+import com.pockit.finance.auth.users.domain.models.UpdateAvatarCommand;
 import com.pockit.finance.auth.users.domain.models.Usuario;
 import com.pockit.finance.auth.users.domain.ports.in.IGetUsuarioPerfilUseCase;
+import com.pockit.finance.auth.users.domain.ports.in.IUpdateAvatarUseCase;
 import com.pockit.finance.auth.users.infrastructure.config.in.mappers.IUsuarioWebMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,17 +25,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,6 +79,9 @@ class UsuarioControllerTest {
 
     @MockBean
     private IGetUsuarioPerfilUseCase getUsuarioPerfilUseCase;
+
+    @MockBean
+    private IUpdateAvatarUseCase updateAvatarUseCase;
 
     @MockBean
     private ICryptoPort cryptoPort;
@@ -128,5 +141,87 @@ class UsuarioControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.statusCode").value(404))
                 .andExpect(jsonPath("$.code").value(BaseConstants.CODE_USUARIO_NO_ENCONTRADO));
+    }
+
+    @Test
+    @DisplayName("PUT /api/usuarios/me/avatar debe retornar 200 OK con el perfil actualizado cuando la imagen es valida")
+    void shouldUpdateAvatarWithValidJwtAndImage() throws Exception {
+        UUID usrId = UUID.randomUUID();
+        String newAvatarUrl = "https://supabase.test/storage/v1/object/public/avatars/" + usrId + "/avatar.png";
+        Usuario actualizado = Usuario.builder()
+                .usrId(usrId)
+                .usrCorreo("camilo@pockit.com")
+                .usrPasswordHash("$2a$12$secrethash")
+                .usrNombre("Camilo")
+                .usrApellido("Perez")
+                .usrEdad((short) 28)
+                .usrAvatarUrl(newAvatarUrl)
+                .usrActivo(true)
+                .usrCreadoEn(OffsetDateTime.now(ZoneOffset.UTC))
+                .build();
+
+        String jwt = tokenPort.generarAccessToken(actualizado);
+        when(updateAvatarUseCase.ejecutar(any(UpdateAvatarCommand.class))).thenReturn(actualizado);
+
+        BufferedImage img = new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(img, "png", baos);
+        MockMultipartFile avatarPart = new MockMultipartFile(
+                "avatar", "avatar.png", MediaType.IMAGE_PNG_VALUE, baos.toByteArray()
+        );
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/usuarios/me/avatar")
+                        .file(avatarPart)
+                        .header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usrId").value(usrId.toString()))
+                .andExpect(jsonPath("$.usrAvatarUrl").value(newAvatarUrl))
+                .andExpect(content().string(not(containsString("usrPasswordHash"))));
+    }
+
+    @Test
+    @DisplayName("PUT /api/usuarios/me/avatar debe retornar 401 Unauthorized sin JWT")
+    void shouldReturn401WhenUpdatingAvatarWithoutJwt() throws Exception {
+        MockMultipartFile avatarPart = new MockMultipartFile(
+                "avatar", "avatar.png", MediaType.IMAGE_PNG_VALUE, new byte[]{1, 2, 3}
+        );
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/usuarios/me/avatar")
+                        .file(avatarPart))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.statusCode").value(401))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_UNAUTHORIZED));
+    }
+
+    @Test
+    @DisplayName("PUT /api/usuarios/me/avatar debe retornar 400 IMAGEN_VACIA cuando no se envia archivo")
+    void shouldReturn400WhenAvatarIsMissing() throws Exception {
+        UUID usrId = UUID.randomUUID();
+        String jwt = tokenPort.generarAccessToken(Usuario.builder().usrId(usrId).usrCorreo("camilo@pockit.com").build());
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/usuarios/me/avatar")
+                        .header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode").value(400))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_IMAGEN_VACIA));
+    }
+
+    @Test
+    @DisplayName("PUT /api/usuarios/me/avatar debe retornar 413 cuando el avatar excede 2MB")
+    void shouldReturn413WhenAvatarExceedsMaxSize() throws Exception {
+        UUID usrId = UUID.randomUUID();
+        String jwt = tokenPort.generarAccessToken(Usuario.builder().usrId(usrId).usrCorreo("camilo@pockit.com").build());
+
+        MockMultipartFile oversized = new MockMultipartFile(
+                "avatar", "big.png", MediaType.IMAGE_PNG_VALUE,
+                new byte[BaseConstants.MAX_IMAGE_SIZE_BYTES + 1]
+        );
+
+        mockMvc.perform(multipart(HttpMethod.PUT, "/api/usuarios/me/avatar")
+                        .file(oversized)
+                        .header("Authorization", "Bearer " + jwt))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.statusCode").value(413))
+                .andExpect(jsonPath("$.code").value(BaseConstants.CODE_IMAGEN_TAMANO_EXCEDIDO));
     }
 }
