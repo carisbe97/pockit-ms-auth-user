@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.env.*
+target/
+*.md
+*.p12
+*.key
+*.crt
+.idea/
+*.iml

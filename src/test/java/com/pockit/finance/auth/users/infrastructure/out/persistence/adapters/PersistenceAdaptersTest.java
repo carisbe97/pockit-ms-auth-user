@@ -53,7 +53,7 @@ class PersistenceAdaptersTest {
         Usuario usuario = Usuario.builder().usrId(id).usrCorreo("test@pockit.com").usrNombre("Test").build();
         UsuarioEntity entity = UsuarioEntity.builder().usrId(id).usrCorreo("test@pockit.com").usrNombre("Test").build();
 
-        when(usuarioJpaRepository.save(any(UsuarioEntity.class))).thenReturn(entity);
+        when(usuarioJpaRepository.saveAndFlush(any(UsuarioEntity.class))).thenReturn(entity);
         when(usuarioJpaRepository.findById(id)).thenReturn(Optional.of(entity));
         when(usuarioJpaRepository.findByUsrCorreoIgnoreCase("test@pockit.com")).thenReturn(Optional.of(entity));
         when(usuarioJpaRepository.findByUsrResetTokenHash("reset-hash")).thenReturn(Optional.of(entity));
